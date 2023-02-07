@@ -1,10 +1,18 @@
 const asyncHandler = require("../middleware/asyncHandler");
+const BootcampModel = require("../models/BootcampModel");
+const ErrorResponse = require("../utils/ErrorResponse");
 
 // Desc     Get all bootcamps
 // Route    /api/v1/bootcamps
 // Access   Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
-  res.status(200).json({ success: true, message: "Get all bootcamps" });
+  const bootcamps = await BootcampModel.find();
+  res.status(200).json({
+    success: true,
+    message: "Get all bootcamps",
+    count: bootcamps.length,
+    data: bootcamps,
+  });
 });
 
 // Desc     Get single bootcamps
@@ -12,16 +20,28 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
 // Access   Public
 exports.getOneBootcamps = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  res
-    .status(200)
-    .json({ success: true, message: `Get one bootcamps with id: ${id}` });
+  const bootcamp = await BootcampModel.findById(id);
+  if (!bootcamp) {
+    return next(new ErrorResponse(`Bootcamp not found with id: ${id}`, 404));
+  }
+  res.status(200).json({
+    success: true,
+    message: `Get one bootcamps with id: ${id}`,
+    data: bootcamp,
+  });
 });
 
 // Desc     create one bootcamps
 // Route    /api/v1/bootcamps
 // Access   Private
 exports.createBootcamps = asyncHandler(async (req, res, next) => {
-  res.status(201).json({ success: true, message: "Create one bootcamps" });
+  const bootcampBody = req.body;
+  const newBootcamp = await BootcampModel.create(bootcampBody);
+  res.status(201).json({
+    success: true,
+    message: "Create one bootcamps",
+    data: newBootcamp,
+  });
 });
 
 // Desc     Update one bootcamps
@@ -29,9 +49,20 @@ exports.createBootcamps = asyncHandler(async (req, res, next) => {
 // Access   Private
 exports.updateBootcamps = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  res
-    .status(201)
-    .json({ success: true, message: `Update one bootcamps with id: ${id}` });
+  const updatedFields = req.body;
+  const updatedBootcamp = await BootcampModel.findByIdAndUpdate(
+    id,
+    updatedFields,
+    { new: true, runValidators: true }
+  );
+  if (!updatedBootcamp) {
+    return next(new ErrorResponse(`Bootcamp not found with id: ${id}`, 404));
+  }
+  res.status(201).json({
+    success: true,
+    message: `Update one bootcamps with id: ${id}`,
+    data: updatedBootcamp,
+  });
 });
 
 // Desc     Delete one bootcamps
@@ -39,7 +70,15 @@ exports.updateBootcamps = asyncHandler(async (req, res, next) => {
 // Access   Private
 exports.deleteBootcamps = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
+  const deletedBootcamp = await BootcampModel.findByIdAndDelete(id);
+  if (!deletedBootcamp) {
+    return next(new ErrorResponse(`Bootcamp not found with id: ${id}`, 404));
+  }
   res
     .status(200)
-    .json({ success: true, message: `Delete bootcamps with id: ${id}` });
+    .json({
+      success: true,
+      message: `Delete bootcamps with id: ${id}`,
+      data: {},
+    });
 });
