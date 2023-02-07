@@ -7,17 +7,72 @@ const geocoder = require("../utils/geocoder");
 // Route    /api/v1/bootcamps
 // Access   Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
-  const query = req.query;
-  const queryStr = JSON.stringify(query).replace(
-    /\b(gt|gte|lt|lte|in)\b/g,
+  let query;
+
+  // Copy request query
+  const reqQuery = { ...req.query };
+
+  // Field property to remove
+  const fieldProperty = ["select", "sort", "skip", "limit", "page"];
+
+  // Remove field property
+  fieldProperty.forEach((field) => delete reqQuery[field]);
+
+  // Filtering bootcamps with gt, gte, lt, lte, and in
+  const queryStr = JSON.stringify(reqQuery).replace(
+    /\b(gt|gte|lt|lte|in)\b/gi,
     (match) => `$${match}`
   );
-  console.log(queryStr);
-  const bootcamps = await BootcampModel.find(JSON.parse(queryStr));
+
+  query = BootcampModel.find(JSON.parse(queryStr));
+
+  // Select field to display
+  if (req.query.select) {
+    const select = req.query.select
+      .split(",")
+      .map((item) => item.trim())
+      .join(" ");
+
+    query = query.select(select);
+  }
+
+  // Sort bootcamps
+  if (req.query.sort) {
+    const sort = req.query.sort
+      .split(",")
+      .map((item) => item.trim())
+      .join(" ");
+
+    query = query.sort(sort);
+  } else {
+    query = query.sort("name");
+  }
+
+  // Pagination
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 2; // change to 25 when finish
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  const totalDocs = await BootcampModel.countDocuments();
+
+  query = query.skip(startIndex).limit(limit);
+
+  const pagination = {
+    page,
+    limit,
+    prev: startIndex > 0 ? page - 1 : null,
+    next: endIndex < totalDocs ? page + 1 : null,
+    totalDocs,
+  };
+
+  // Executing query
+  const bootcamps = await query;
+
   res.status(200).json({
     success: true,
     message: "Get all bootcamps",
     count: bootcamps.length,
+    pagination,
     data: bootcamps,
   });
 });
