@@ -8,7 +8,7 @@ const geocoder = require("../utils/geocoder");
 // Access   Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
   // field property to remove in request query
-  const fieldProperty = ["select", "sort"];
+  const fieldProperty = ["select", "sort", "page", "skip"];
 
   // copy request.query
   const reqQuery = { ...req.query };
@@ -36,11 +36,39 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
     query.sort("name");
   }
 
+  // pagination
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 1; //change to 25 after finish testing
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  const totalDocs = await BootcampModel.countDocuments(JSON.parse(queryString));
+
+  // paginate
+  query.skip(startIndex).limit(limit);
+
+  // full path url
+  const fullPathUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+
+  const pagination = {
+    page,
+    limit,
+    prev:
+      startIndex > 0
+        ? fullPathUrl.replace(/page\=[0-9]{1,}/, `page=${page - 1}`)
+        : null,
+    next:
+      endIndex < totalDocs
+        ? fullPathUrl.replace(/page\=[0-9]{1,}/, `page=${page + 1}`)
+        : null,
+    totalDocs,
+  };
+
   const bootcamps = await query;
   res.status(200).json({
     success: true,
     message: "Get all bootcamps",
     count: bootcamps.length,
+    pagination,
     data: bootcamps,
   });
 });
