@@ -56,10 +56,21 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
   // Paginate
   query.skip(startIndex).limit(limit);
 
+  // const fullpathUrl
+  const fullPathUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+
   const pagination = {
     page,
     limit,
+    prevUrl:
+      startIndex > 0
+        ? fullPathUrl.replace(/page=[0-9]{1,}/, `page=${page - 1}`)
+        : null,
     prev: startIndex > 0 ? page - 1 : null,
+    nextUrl:
+      endIndex < totalDocs
+        ? fullPathUrl.replace(/page=[0-9]{1,}/, `page=${page + 1}`)
+        : null,
     next: endIndex < totalDocs ? page + 1 : null,
     totalDocs,
   };
