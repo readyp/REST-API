@@ -8,7 +8,7 @@ const geocoder = require("../utils/geocoder");
 // Access   Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
   // field property to remove in request query
-  const fieldProperty = ["select", "sort"];
+  const fieldProperty = ["select", "sort", "page", "limit"];
 
   // copy request.query
   const reqQuery = { ...req.query };
@@ -36,11 +36,29 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
     query.sort("name");
   }
 
+  // Pagination
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 25; //change to 25 when finish testing
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  const totalDocs = await BootcampModel.countDocuments();
+
+  query.skip(startIndex).limit(limit);
+
+  const pagination = {
+    page,
+    limit,
+    prev: startIndex > 0 ? page - 1 : null,
+    next: endIndex < totalDocs ? page + 1 : null,
+    totalDocs,
+  };
+
   const bootcamps = await query;
   res.status(200).json({
     success: true,
     message: "Get all bootcamps",
     count: bootcamps.length,
+    pagination,
     data: bootcamps,
   });
 });
