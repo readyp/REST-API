@@ -37,11 +37,13 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
   }
 
   // pagination
-  const page = parseInt(req.query.page, 10) || 1;
+  let page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 1; //change to 25 after finish testing
+  const totalDocs = await BootcampModel.countDocuments(JSON.parse(queryString));
+  const maxPage = Math.ceil(totalDocs / limit);
+  page = page > maxPage ? 1 : page;
   const startIndex = (page - 1) * limit;
   const endIndex = page * limit;
-  const totalDocs = await BootcampModel.countDocuments(JSON.parse(queryString));
 
   // paginate
   query.skip(startIndex).limit(limit);
@@ -49,17 +51,21 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
   // full path url
   const fullPathUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
 
+  // get page
+  const getPage = (page) => {
+    if (/page/.test(fullPathUrl)) {
+      return fullPathUrl.replace(/page\=[0-9]{1,}/, `page=${page}`);
+    }
+
+    return `${fullPathUrl}&page=${page}`;
+  };
+
   const pagination = {
     page,
+    maxPage,
     limit,
-    prev:
-      startIndex > 0
-        ? fullPathUrl.replace(/page\=[0-9]{1,}/, `page=${page - 1}`)
-        : null,
-    next:
-      endIndex < totalDocs
-        ? fullPathUrl.replace(/page\=[0-9]{1,}/, `page=${page + 1}`)
-        : null,
+    prev: startIndex > 0 ? getPage(page - 1) : null,
+    next: endIndex < totalDocs ? getPage(page + 1) : null,
     totalDocs,
   };
 
