@@ -8,7 +8,7 @@ const geocoder = require("../utils/geocoder");
 // Access   Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
   // field property to remove in request query
-  const fieldProperty = ["select", "sort", "page", "skip"];
+  const fieldProperty = ["select", "sort", "page", "limit"];
 
   // copy request.query
   const reqQuery = { ...req.query };
