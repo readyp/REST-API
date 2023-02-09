@@ -21,7 +21,10 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
     (match) => `$${match}`
   );
 
-  const query = BootcampModel.find(JSON.parse(queryString));
+  const query = BootcampModel.find(JSON.parse(queryString)).populate({
+    path: "courses",
+    select: "title -bootcamp",
+  });
 
   // Select field to display
   if (req.query.select) {
@@ -45,7 +48,7 @@ exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
 
   // Pagination
   let page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 25;
   const totalDocs = await BootcampModel.countDocuments(JSON.parse(queryString));
   const maxPage = Math.ceil(totalDocs / limit);
   page = page > maxPage ? 1 : page;
@@ -148,10 +151,12 @@ exports.updateBootcamps = asyncHandler(async (req, res, next) => {
 // Access   Private
 exports.deleteBootcamps = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const deletedBootcamp = await BootcampModel.findByIdAndDelete(id);
+  const deletedBootcamp = await BootcampModel.findById(id);
   if (!deletedBootcamp) {
     return next(new ErrorResponse(`Bootcamp not found with id: ${id}`, 404));
   }
+
+  await deletedBootcamp.remove();
   res.status(200).json({
     success: true,
     message: `Delete bootcamps with id: ${id}`,
