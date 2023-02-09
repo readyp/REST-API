@@ -7,11 +7,85 @@ const geocoder = require("../utils/geocoder");
 // Route    /api/v1/bootcamps
 // Access   Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
-  const bootcamps = await BootcampModel.find();
+  // copy req query
+  const reqQuery = { ...req.query };
+
+  // field property to remove
+  const fieldProperties = ["select", "sort", "limit", "page"];
+
+  // remove field from reqQuery
+  fieldProperties.forEach((field) => delete reqQuery[field]);
+
+  // filter result with gt, gte, lt, lte, and in
+  const queryString = JSON.stringify(reqQuery).replace(
+    /\b(gt|gte|lt|lte|in)\b/g,
+    (match) => `$${match}`
+  );
+
+  const query = BootcampModel.find(JSON.parse(queryString));
+
+  // Select field to display
+  if (req.query.select) {
+    const select = req.query.select
+      .split(",")
+      .map((item) => item.trim())
+      .join(" ");
+
+    query.select(select);
+  }
+
+  // Sorting result
+  if (req.query.sort) {
+    const sortBy = req.query.sort
+      .split(",")
+      .map((item) => item.trim())
+      .join(" ");
+    query.sort(sortBy);
+  } else {
+    query.sort("name");
+  }
+
+  // pagination
+  let page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 1; //change to 25 after finish testing
+  const totalDocs = await BootcampModel.countDocuments(JSON.parse(queryString));
+  const maxPage = Math.ceil(totalDocs / limit);
+  page = page > maxPage ? 1 : page;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  // paginate
+  query.skip(startIndex).limit(limit);
+
+  // get page url
+  const getPage = (numPage) => {
+    const fullPathUrl = `${req.protocol}://${req.get("host")}${
+      req.originalUrl
+    }`;
+    if (/page/.test(fullPathUrl)) {
+      return fullPathUrl.replace(/page\=[0-9]{1,}/, `page=${numPage}`);
+    }
+    return `${fullPathUrl}&page=${numPage}`;
+  };
+
+  // pagination object
+  const pagination = {
+    page,
+    limit,
+    maxPage,
+    totalDocs,
+    prev: startIndex > 0 ? getPage(page - 1) : null,
+    next: endIndex < totalDocs ? getPage(page + 1) : null,
+  };
+
+  // Exec query
+  const bootcamps = await query;
+
   res.status(200).json({
     success: true,
     message: "Get all bootcamps",
     count: bootcamps.length,
+    pagination,
     data: bootcamps,
   });
 });
