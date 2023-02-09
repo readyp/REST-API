@@ -98,7 +98,7 @@ const BootcampSchema = new Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 // slugify slug
@@ -133,6 +133,20 @@ BootcampSchema.pre("save", async function () {
 
   // dont save address
   this.address = undefined;
+});
+
+// Delete all courses when deleted
+BootcampSchema.pre("remove", async function () {
+  console.log(`Courses being removed from bootcamp: ${this.name}`);
+  await this.model("Course").deleteMany({ bootcamp: this._id });
+});
+
+// Reverse populate with virtual
+BootcampSchema.virtual("courses", {
+  ref: "Course",
+  localField: "_id",
+  foreignField: "bootcamp",
+  justOne: false,
 });
 
 const BootcampModel = model("Bootcamp", BootcampSchema);
