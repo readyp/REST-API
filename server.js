@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const colors = require("colors");
 
 const bootcampsRouter = require("./router/bootcamps");
+const coursesRouter = require("./router/courses");
 const errorHandler = require("./middleware/errorHandler");
 const connectDB = require("./config/db");
 
@@ -21,6 +22,9 @@ app.use(express.json());
 
 // bootcamps router
 app.use("/api/v1/bootcamps", bootcampsRouter);
+
+// courses router
+app.use("/api/v1/courses", coursesRouter);
 
 // error handler middleware
 app.use(errorHandler);
