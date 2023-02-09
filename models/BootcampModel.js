@@ -135,6 +135,6 @@ BootcampSchema.pre("save", async function () {
   this.address = undefined;
 });
 
-const BootcampModel = model("bootcamps", BootcampSchema);
+const BootcampModel = model("Bootcamp", BootcampSchema);
 
 module.exports = BootcampModel;
