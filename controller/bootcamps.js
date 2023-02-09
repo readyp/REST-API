@@ -1,6 +1,7 @@
 const asyncHandler = require("../middleware/asyncHandler");
 const BootcampModel = require("../models/BootcampModel");
 const ErrorResponse = require("../utils/ErrorResponse");
+const geocoder = require("../utils/geocoder");
 
 // Desc     Get all bootcamps
 // Route    /api/v1/bootcamps
@@ -161,5 +162,30 @@ exports.deleteBootcamps = asyncHandler(async (req, res, next) => {
     success: true,
     message: `Delete bootcamps with id: ${id}`,
     data: {},
+  });
+});
+
+// Desc     Get bootcamp by zipcode and distance
+// Route    /api/v1/bootcamps/radius/:zipcode/:distance
+// Access   Public
+exports.getAllBootcampsByRadius = asyncHandler(async (req, res, next) => {
+  const { zipcode, distance } = req.params;
+  const loc = await geocoder.geocode(zipcode);
+  const { longitude, latitude } = loc[0];
+
+  // radius earth 6371
+  const radius = distance / 6371;
+
+  const bootcamps = await BootcampModel.find({
+    location: {
+      $geoWithin: { $centerSphere: [[longitude, latitude], radius] },
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Get All bootcamps by zipcode and distance",
+    count: bootcamps.length,
+    data: bootcamps,
   });
 });
