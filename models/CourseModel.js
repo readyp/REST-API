@@ -33,7 +33,7 @@ const CourseSchema = new Schema(
     },
     bootcamp: {
       type: ObjectId,
-      ref: "bootcamps",
+      ref: "Bootcamp",
     },
   },
   { timestamps: true }
