@@ -7,85 +7,90 @@ const geocoder = require("../utils/geocoder");
 // Route    /api/v1/bootcamps
 // Access   Public
 exports.getAllBootcamps = asyncHandler(async (req, res, next) => {
-  // field property to remove
-  const fieldProperties = ["select", "sort", "page", "limit"];
+  // // field property to remove
+  // const fieldProperties = ["select", "sort", "page", "limit"];
 
-  // copy request query
-  const reqQuery = { ...req.query };
+  // // copy request query
+  // const reqQuery = { ...req.query };
 
-  // delete field property in reqQuery
-  fieldProperties.forEach((field) => delete reqQuery[field]);
+  // // delete field property in reqQuery
+  // fieldProperties.forEach((field) => delete reqQuery[field]);
 
-  // filtering gt, gte, lt, lte, in
-  const queryString = JSON.stringify(reqQuery).replace(
-    /\b(gt|gte|lt|lte|in)\b/,
-    (match) => `$${match}`
-  );
+  // // filtering gt, gte, lt, lte, in
+  // const queryString = JSON.stringify(reqQuery).replace(
+  //   /\b(gt|gte|lt|lte|in)\b/,
+  //   (match) => `$${match}`
+  // );
 
-  const query = BootcampModel.find(JSON.parse(queryString)).populate({
-    path: "courses",
-    select: "title -bootcamp",
-  });
+  // const query = BootcampModel.find(JSON.parse(queryString)).populate({
+  //   path: "courses",
+  //   select: "title -bootcamp",
+  // });
 
-  // Select field to display
-  if (req.query.select) {
-    const select = req.query.select
-      .split(",")
-      .map((item) => item.trim())
-      .join(" ");
-    query.select(select);
-  }
+  // // Select field to display
+  // if (req.query.select) {
+  //   const select = req.query.select
+  //     .split(",")
+  //     .map((item) => item.trim())
+  //     .join(" ");
+  //   query.select(select);
+  // }
 
-  // Sort field by
-  if (req.query.sort) {
-    const sortBy = req.query.sort
-      .split(",")
-      .map((item) => item.trim())
-      .join(" ");
-    query.sort(sortBy);
-  } else {
-    query.sort("name");
-  }
+  // // Sort field by
+  // if (req.query.sort) {
+  //   const sortBy = req.query.sort
+  //     .split(",")
+  //     .map((item) => item.trim())
+  //     .join(" ");
+  //   query.sort(sortBy);
+  // } else {
+  //   query.sort("name");
+  // }
 
-  // Pagination
-  let page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 25;
-  const totalDocs = await BootcampModel.countDocuments(JSON.parse(queryString));
-  const maxPage = Math.ceil(totalDocs / limit);
-  page = page > maxPage ? 1 : page;
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
+  // // Pagination
+  // let page = parseInt(req.query.page, 10) || 1;
+  // const limit = parseInt(req.query.limit, 10) || 25;
+  // const totalDocs = await BootcampModel.countDocuments(JSON.parse(queryString));
+  // const maxPage = Math.ceil(totalDocs / limit);
+  // page = page > maxPage ? 1 : page;
+  // const startIndex = (page - 1) * limit;
+  // const endIndex = page * limit;
 
-  // paginate
-  query.skip(startIndex).limit(limit);
+  // // paginate
+  // query.skip(startIndex).limit(limit);
 
-  // get page
-  const getPage = (pageNum) => {
-    const fullpathUrl = `${req.protocol}://${req.get("host")}${
-      req.originalUrl
-    }`;
+  // // get page
+  // const getPage = (pageNum) => {
+  //   const fullpathUrl = `${req.protocol}://${req.get("host")}${
+  //     req.originalUrl
+  //   }`;
 
-    if (/page/.test(fullpathUrl)) {
-      return `${fullpathUrl}`.replace(/page\=[0-9]{1,}/, `page=${pageNum}`);
-    }
+  //   if (/page/.test(fullpathUrl)) {
+  //     return `${fullpathUrl}`.replace(/page\=[0-9]{1,}/, `page=${pageNum}`);
+  //   }
 
-    if (/\?/.test(fullpathUrl)) {
-      return `${fullpathUrl}&page=${pageNum}`;
-    }
-    return `${fullpathUrl}?page=${pageNum}`;
-  };
+  //   if (/\?/.test(fullpathUrl)) {
+  //     return `${fullpathUrl}&page=${pageNum}`;
+  //   }
+  //   return `${fullpathUrl}?page=${pageNum}`;
+  // };
 
-  // Pagination object
-  const pagination = {
-    page,
-    limit,
-    maxPage,
-    totalDocs,
-    prev: startIndex > 0 ? getPage(page - 1) : null,
-    next: endIndex < maxPage ? getPage(page + 1) : null,
-  };
+  // // Pagination object
+  // const pagination = {
+  //   page,
+  //   limit,
+  //   maxPage,
+  //   totalDocs,
+  //   prev: startIndex > 0 ? getPage(page - 1) : null,
+  //   next: endIndex < maxPage ? getPage(page + 1) : null,
+  // };
 
-  // Exec query
+  // // Exec query
+  // const bootcamps = await query;
+
+  const query = res.advancedResult;
+  const pagination = res.pagination;
+
   const bootcamps = await query;
 
   res.status(200).json({

@@ -12,17 +12,24 @@ exports.getAllCourses = asyncHandler(async (req, res, next) => {
   let query;
   if (bootcampId) {
     query = CourseModel.find({ bootcamp: bootcampId });
-  } else {
-    query = CourseModel.find();
+    const course = await query;
+    return res.status(200).json({
+      success: true,
+      message: `Get all course by bootcamp id: ${bootcampId}`,
+      count: course.length,
+      data: course,
+    });
   }
 
-  query.populate({ path: "bootcamp", select: "name description" });
-
+  // query.populate({ path: "bootcamp", select: "name description" });
+  query = res.advancedResult;
+  const pagination = res.pagination;
   const courses = await query;
 
   res.status(200).json({
     success: true,
     message: "Get All Courses",
+    pagination,
     count: courses.length,
     data: courses,
   });

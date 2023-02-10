@@ -7,7 +7,19 @@ const {
   createCourse,
 } = require("../controller/courses");
 
-router.route("/").get(getAllCourses).post(createCourse);
+const CourseModel = require("../models/CourseModel");
+const advancedResult = require("../middleware/advancedResult");
+
+router
+  .route("/")
+  .get(
+    advancedResult(CourseModel, {
+      path: "bootcamp",
+      select: "name description",
+    }),
+    getAllCourses
+  )
+  .post(createCourse);
 router.route("/:id").get(getOneCourse);
 
 module.exports = router;
